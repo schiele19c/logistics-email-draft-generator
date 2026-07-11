@@ -1,0 +1,1218 @@
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>COSHIP 이메일 드래프트</title>
+  <style>
+    * { box-sizing: border-box; margin: 0; padding: 0; }
+
+    body {
+      font-family: 'Malgun Gothic', '맑은 고딕', sans-serif;
+      font-size: 14px;
+      background: #f0f2f5;
+      min-height: 100vh;
+      display: flex;
+      flex-direction: column;
+    }
+
+    /* ══ 헤더 ══ */
+    header {
+      background: #1a3a5c;
+      color: white;
+      padding: 12px 24px;
+      font-size: 16px;
+      font-weight: bold;
+      letter-spacing: 1px;
+      flex-shrink: 0;
+    }
+
+    /* ══ 탭 바 ══ */
+    .tab-bar {
+      display: flex;
+      background: #14304e;
+      padding: 0 16px;
+      gap: 2px;
+      flex-shrink: 0;
+      position: relative;
+      z-index: 100;
+      overflow-x: auto;
+      -webkit-overflow-scrolling: touch;
+      cursor: grab;
+      user-select: none;
+      scrollbar-width: none;
+    }
+    .tab-bar::-webkit-scrollbar { display: none; }
+    .tab-bar.is-dragging { cursor: grabbing; }
+
+    /* 탭 그룹 (버튼 + 드롭다운 묶음) */
+    .tab-group {
+      position: relative;
+    }
+
+    .tab-btn {
+      display: flex;
+      align-items: center;
+      gap: 6px;
+      padding: 10px 22px;
+      border: none;
+      background: transparent;
+      color: #a0b8cc;
+      font-size: 13px;
+      font-weight: bold;
+      font-family: inherit;
+      cursor: pointer;
+      border-bottom: 3px solid transparent;
+      transition: color 0.15s, border-color 0.15s;
+      letter-spacing: 0.3px;
+      white-space: nowrap;
+    }
+    .tab-btn:hover { color: #cce0f0; }
+    .tab-btn.active {
+      color: #ffffff;
+      border-bottom-color: #5da8e0;
+      background: rgba(255,255,255,0.06);
+    }
+
+    /* 언어 뱃지 */
+    .lang-badge {
+      font-size: 10px;
+      font-weight: 700;
+      color: #5da8e0;
+      background: rgba(93,168,224,0.15);
+      border: 1px solid rgba(93,168,224,0.4);
+      border-radius: 3px;
+      padding: 1px 4px;
+      letter-spacing: 0.5px;
+    }
+    .tab-btn.active .lang-badge {
+      background: rgba(93,168,224,0.25);
+    }
+
+    /* 언어 드롭다운 (position:fixed — overflow-x 클리핑 회피) */
+    .lang-dropdown {
+      display: none;
+      position: fixed;
+      z-index: 200;
+      background: #1e4470;
+      border-radius: 0 0 6px 6px;
+      box-shadow: 0 6px 16px rgba(0,0,0,0.3);
+      overflow: hidden;
+      flex-direction: column;
+    }
+
+    .lang-btn {
+      padding: 9px 20px;
+      border: none;
+      background: transparent;
+      color: #a0b8cc;
+      font-size: 12px;
+      font-family: inherit;
+      cursor: pointer;
+      text-align: center;
+      transition: background 0.15s, color 0.15s;
+      white-space: nowrap;
+    }
+    .lang-btn:hover { background: rgba(255,255,255,0.1); color: #fff; }
+    .lang-btn.active { color: #5da8e0; font-weight: bold; }
+    .lang-btn + .lang-btn { border-top: 1px solid rgba(255,255,255,0.08); }
+
+    /* ══ 탭 콘텐츠 ══ */
+    .tab-content { display: none !important; }
+    .tab-content.active {
+      display: flex !important;
+      gap: 16px;
+      padding: 16px;
+      flex: 1;
+      align-items: flex-start;
+    }
+
+    /* ══ 왼쪽: 이메일 미리보기 ══ */
+    .preview-panel {
+      flex: 1.4;
+      background: white;
+      border: 1px solid #ccc;
+      border-radius: 6px;
+      overflow: hidden;
+      box-shadow: 0 2px 6px rgba(0,0,0,0.08);
+    }
+    .panel-header {
+      background: #1a3a5c;
+      color: white;
+      padding: 8px 14px;
+      font-weight: bold;
+      font-size: 13px;
+    }
+    .email-wrap { padding: 20px 24px; }
+    .email-field { margin-bottom: 14px; }
+    .email-label {
+      font-size: 11px;
+      color: #888;
+      margin-bottom: 4px;
+      text-transform: uppercase;
+      letter-spacing: 0.5px;
+    }
+    .email-subject {
+      font-weight: bold;
+      font-size: 14px;
+      color: #1a3a5c;
+      padding: 8px 10px;
+      background: #f4f7fb;
+      border-left: 3px solid #1a3a5c;
+      border-radius: 0 4px 4px 0;
+      word-break: break-all;
+    }
+    .email-body {
+      font-size: 13.5px;
+      line-height: 1.85;
+      color: #222;
+      white-space: pre-wrap;
+      padding: 10px;
+      background: #fafafa;
+      border: 1px solid #e8e8e8;
+      border-radius: 4px;
+      min-height: 360px;
+    }
+    .copy-btn {
+      display: block;
+      width: 100%;
+      margin-top: 14px;
+      padding: 10px;
+      background: #1a3a5c;
+      color: white;
+      border: none;
+      border-radius: 4px;
+      font-size: 14px;
+      cursor: pointer;
+      font-family: inherit;
+      transition: background 0.2s;
+    }
+    .copy-btn:hover { background: #2a5080; }
+
+    /* ══ 오른쪽: 입력 패널 ══ */
+    .input-panel {
+      flex: 0.7;
+      background: white;
+      border: 1px solid #ccc;
+      border-radius: 6px;
+      overflow: hidden;
+      box-shadow: 0 2px 6px rgba(0,0,0,0.08);
+    }
+    .input-wrap { padding: 16px; }
+    .input-group { margin-bottom: 14px; }
+    .input-group label {
+      display: block;
+      font-size: 12px;
+      font-weight: bold;
+      color: #444;
+      margin-bottom: 4px;
+    }
+    .input-group input[type="text"] {
+      width: 100%;
+      padding: 7px 10px;
+      border: 1px solid #bbb;
+      border-radius: 4px;
+      font-size: 13px;
+      font-family: inherit;
+      text-align: center;
+      transition: border-color 0.2s, background 0.2s;
+    }
+    .input-group input[type="text"]:focus {
+      outline: none;
+      border-color: #1a3a5c;
+      box-shadow: 0 0 0 2px rgba(26,58,92,0.12);
+    }
+    .input-group input[type="text"]:disabled {
+      background: #f0f0f0;
+      color: #aaa;
+      cursor: not-allowed;
+    }
+    .section-title {
+      font-size: 12px;
+      font-weight: bold;
+      color: #1a3a5c;
+      background: #eef3f9;
+      padding: 5px 8px;
+      border-radius: 4px;
+      margin-bottom: 10px;
+      margin-top: 4px;
+    }
+    .divider { border: none; border-top: 1px solid #e0e0e0; margin: 14px 0; }
+    .checkbox-group {
+      display: flex;
+      align-items: center;
+      padding: 7px 10px;
+      border: 1px solid #e0e0e0;
+      border-radius: 4px;
+      margin-bottom: 7px;
+      cursor: pointer;
+      transition: background 0.15s;
+    }
+    .checkbox-group:hover { background: #f4f7fb; }
+    .checkbox-group input[type="checkbox"] {
+      width: 16px;
+      height: 16px;
+      margin-right: 8px;
+      cursor: pointer;
+      accent-color: #1a3a5c;
+    }
+    .checkbox-group span { font-size: 13px; color: #333; font-weight: 500; }
+    .checkbox-group.checked { background: #eef3f9; border-color: #1a3a5c; }
+    .reset-btn {
+      display: block;
+      width: 100%;
+      margin-top: 16px;
+      padding: 8px;
+      background: #eee;
+      color: #555;
+      border: 1px solid #ccc;
+      border-radius: 4px;
+      font-size: 13px;
+      cursor: pointer;
+      font-family: inherit;
+      transition: background 0.2s;
+    }
+    .reset-btn:hover { background: #ddd; }
+    .sub-inputs {
+      padding-left: 10px;
+      border-left: 2px solid #c0d4e8;
+      margin-bottom: 10px;
+    }
+
+    /* ══ 토스트 ══ */
+    #toast {
+      position: fixed;
+      bottom: 30px;
+      left: 50%;
+      transform: translateX(-50%) translateY(20px);
+      background: #27ae60;
+      color: white;
+      padding: 10px 24px;
+      border-radius: 24px;
+      font-size: 14px;
+      opacity: 0;
+      transition: opacity 0.3s, transform 0.3s;
+      pointer-events: none;
+      z-index: 999;
+    }
+    #toast.show { opacity: 1; transform: translateX(-50%) translateY(0); }
+  </style>
+</head>
+<body>
+
+<header>✉ COSHIP 상업 화물 고객 안내 이메일 생성기</header>
+
+<!-- ══ 탭 바 ══ -->
+<div class="tab-bar">
+
+  <div class="tab-group">
+    <button class="tab-btn active" onclick="switchTab('pre-alert', this)">
+      PRE-ALERT <span class="lang-badge" id="badge-pre-alert">KO</span>
+    </button>
+    <div class="lang-dropdown">
+      <button class="lang-btn active" onclick="selectLang('pre-alert','ko',this)">국문</button>
+      <button class="lang-btn"        onclick="selectLang('pre-alert','en',this)">영문</button>
+    </div>
+  </div>
+
+  <div class="tab-group">
+    <button class="tab-btn" onclick="switchTab('customs', this)">
+      통관 완료 안내 <span class="lang-badge" id="badge-customs">KO</span>
+    </button>
+    <div class="lang-dropdown">
+      <button class="lang-btn active" onclick="selectLang('customs','ko',this)">국문</button>
+      <button class="lang-btn"        onclick="selectLang('customs','en',this)">영문</button>
+    </div>
+  </div>
+
+  <div class="tab-group">
+    <button class="tab-btn" onclick="switchTab('invoice', this)">
+      운송 인보이스 안내 <span class="lang-badge" id="badge-invoice">KO</span>
+    </button>
+    <div class="lang-dropdown">
+      <button class="lang-btn active" onclick="selectLang('invoice','ko',this)">국문</button>
+      <button class="lang-btn"        onclick="selectLang('invoice','en',this)">영문</button>
+    </div>
+  </div>
+
+  <div class="tab-group">
+    <button class="tab-btn" onclick="switchTab('bond', this)">
+      본드 갱신 인보이스 안내 <span class="lang-badge" id="badge-bond">KO</span>
+    </button>
+    <div class="lang-dropdown">
+      <button class="lang-btn active" onclick="selectLang('bond','ko',this)">국문</button>
+      <button class="lang-btn"        onclick="selectLang('bond','en',this)">영문</button>
+    </div>
+  </div>
+
+  <div class="tab-group">
+    <button class="tab-btn" onclick="switchTab('doa', this)">
+      DOA 승인 안내 <span style="font-size:10px;font-weight:700;color:#5da8e0;background:rgba(93,168,224,0.15);border:1px solid rgba(93,168,224,0.4);border-radius:3px;padding:1px 5px;">KO/EN</span>
+    </button>
+  </div>
+
+</div><!-- /tab-bar -->
+
+
+<!-- ════════════════════════════════════
+     탭 1 : PRE-ALERT
+════════════════════════════════════ -->
+<div id="tab-pre-alert" class="tab-content active">
+
+  <div class="preview-panel">
+    <div class="panel-header" id="hdr-pre-alert">이메일 DRAFT — PRE-ALERT · 국문</div>
+    <div class="email-wrap">
+      <div class="email-field">
+        <div class="email-label">제목</div>
+        <div class="email-subject" id="pa-subject"></div>
+      </div>
+      <div class="email-field">
+        <div class="email-label">본문</div>
+        <div class="email-body" id="pa-body"></div>
+      </div>
+      <button class="copy-btn" onclick="copyEmail(null,'pa-body')">📋 이메일 본문 복사</button>
+    </div>
+  </div>
+
+  <div class="input-panel">
+    <div class="panel-header">입력사항</div>
+    <div class="input-wrap">
+      <div class="input-group">
+        <label>화주명</label>
+        <input type="text" id="pa-shipper" placeholder="예) THE LOAF" oninput="updatePA()" />
+      </div>
+      <div class="input-group">
+        <label>BL#</label>
+        <input type="text" id="pa-bl" placeholder="예) COSF26057, B, C" oninput="updatePA()" />
+      </div>
+      <div class="input-group">
+        <label>밴쿠버 ETA</label>
+        <input type="text" id="pa-eta-van" placeholder="예) 6/1" oninput="updatePA()" />
+      </div>
+      <div class="input-group">
+        <label>창고 ETA</label>
+        <input type="text" id="pa-eta-wh" placeholder="예) 6/10" oninput="updatePA()" />
+      </div>
+
+      <hr class="divider" />
+      <div class="section-title">추가 안내 항목</div>
+
+      <label class="checkbox-group" id="lbl-pa-carm">
+        <input type="checkbox" id="chk-pa-carm" onchange="toggleCheck('lbl-pa-carm'); updatePA()" />
+        <span>CARM</span>
+      </label>
+      <label class="checkbox-group" id="lbl-pa-rpp">
+        <input type="checkbox" id="chk-pa-rpp" onchange="toggleCheck('lbl-pa-rpp'); updatePA()" />
+        <span>RPP / 재정보증</span>
+      </label>
+      <label class="checkbox-group" id="lbl-pa-poa">
+        <input type="checkbox" id="chk-pa-poa" onchange="toggleCheck('lbl-pa-poa'); updatePA()" />
+        <span>POA</span>
+      </label>
+      <label class="checkbox-group" id="lbl-pa-co">
+        <input type="checkbox" id="chk-pa-co" onchange="toggleCheck('lbl-pa-co'); updatePA()" />
+        <span>CO</span>
+      </label>
+      <label class="checkbox-group" id="lbl-pa-hscode">
+        <input type="checkbox" id="chk-pa-hscode" onchange="toggleCheck('lbl-pa-hscode'); updatePA()" />
+        <span>HS Code</span>
+      </label>
+
+      <button class="reset-btn" onclick="resetPA()">↺ 초기화</button>
+    </div>
+  </div>
+</div><!-- /tab-pre-alert -->
+
+
+<!-- ════════════════════════════════════
+     탭 2 : 통관 완료 안내
+════════════════════════════════════ -->
+<div id="tab-customs" class="tab-content">
+
+  <div class="preview-panel">
+    <div class="panel-header" id="hdr-customs">이메일 DRAFT — 통관 완료 안내 · 국문</div>
+    <div class="email-wrap">
+      <div class="email-field">
+        <div class="email-label">본문</div>
+        <div class="email-body" id="cu-body"></div>
+      </div>
+      <button class="copy-btn" onclick="copyEmail(null,'cu-body')">📋 이메일 본문 복사</button>
+    </div>
+  </div>
+
+  <div class="input-panel">
+    <div class="panel-header">입력사항</div>
+    <div class="input-wrap">
+
+      <div class="section-title">출고 정보 확인</div>
+
+      <label class="checkbox-group" id="lbl-cu-inquiry">
+        <input type="checkbox" id="chk-cu-inquiry"
+               onchange="toggleCheck('lbl-cu-inquiry'); toggleSubInputs(); updateCU()" />
+        <span>배송지 정보 문의</span>
+      </label>
+
+      <label class="checkbox-group" id="lbl-cu-confirm">
+        <input type="checkbox" id="chk-cu-confirm"
+               onchange="toggleCheck('lbl-cu-confirm'); toggleSubInputs(); updateCU()" />
+        <span>배송지 보유 정보 컨펌 요청</span>
+      </label>
+
+      <div class="sub-inputs">
+        <div class="input-group" style="margin-top:8px;">
+          <label>주소</label>
+          <input type="text" id="cu-address" disabled
+                 placeholder="예) 1501 Hartley Ave, Coquitlam, BC V3K 6Z7"
+                 oninput="updateCU()" />
+        </div>
+        <div class="input-group">
+          <label>연락처</label>
+          <input type="text" id="cu-phone" disabled
+                 placeholder="예) 604-455-1000"
+                 oninput="updateCU()" />
+        </div>
+      </div>
+
+      <hr class="divider" />
+
+      <label class="checkbox-group" id="lbl-cu-delivery">
+        <input type="checkbox" id="chk-cu-delivery"
+               onchange="toggleCheck('lbl-cu-delivery'); updateCU()" />
+        <span>픽업 / 배송 여부 확인 요청</span>
+      </label>
+
+      <button class="reset-btn" onclick="resetCU()">↺ 초기화</button>
+    </div>
+  </div>
+</div><!-- /tab-customs -->
+
+
+<!-- ════════════════════════════════════
+     탭 3 : 운송 인보이스 안내
+════════════════════════════════════ -->
+<div id="tab-invoice" class="tab-content">
+
+  <div class="preview-panel">
+    <div class="panel-header" id="hdr-invoice">이메일 DRAFT — 운송 인보이스 안내 · 국문</div>
+    <div class="email-wrap">
+      <div class="email-field">
+        <div class="email-label">본문</div>
+        <div class="email-body" id="inv-body"></div>
+      </div>
+      <button class="copy-btn" onclick="copyEmail(null,'inv-body')">📋 이메일 본문 복사</button>
+    </div>
+  </div>
+
+  <div class="input-panel">
+    <div class="panel-header">입력사항</div>
+    <div class="input-wrap">
+
+      <label class="checkbox-group" id="lbl-inv-customs">
+        <input type="checkbox" id="chk-inv-customs"
+               onchange="toggleCheck('lbl-inv-customs'); updateINV()" />
+        <span>통관 최초 안내</span>
+      </label>
+
+      <label class="checkbox-group" id="lbl-inv-delivery">
+        <input type="checkbox" id="chk-inv-delivery"
+               onchange="toggleCheck('lbl-inv-delivery'); updateINV()" />
+        <span>배송</span>
+      </label>
+
+      <label class="checkbox-group" id="lbl-inv-pickup">
+        <input type="checkbox" id="chk-inv-pickup"
+               onchange="toggleCheck('lbl-inv-pickup'); updateINV()" />
+        <span>픽업</span>
+      </label>
+
+      <button class="reset-btn" onclick="resetINV()">↺ 초기화</button>
+    </div>
+  </div>
+</div><!-- /tab-invoice -->
+
+
+<!-- ════════════════════════════════════
+     탭 4 : 본드 갱신 인보이스 안내
+════════════════════════════════════ -->
+<div id="tab-bond" class="tab-content">
+
+  <div class="preview-panel">
+    <div class="panel-header" id="hdr-bond">이메일 DRAFT — 본드 갱신 인보이스 안내 · 국문</div>
+    <div class="email-wrap">
+      <div class="email-field">
+        <div class="email-label">제목</div>
+        <div class="email-subject" id="bond-subject"></div>
+      </div>
+      <div class="email-field">
+        <div class="email-label">본문</div>
+        <div class="email-body" id="bond-body"></div>
+      </div>
+      <button class="copy-btn" onclick="copyEmail(null,'bond-body')">📋 이메일 본문 복사</button>
+    </div>
+  </div>
+
+  <div class="input-panel">
+    <div class="panel-header">입력사항</div>
+    <div class="input-wrap">
+      <div class="input-group">
+        <label>수입자명</label>
+        <input type="text" id="bond-importer" placeholder="예) THE LOAF" oninput="updateBOND()" />
+      </div>
+      <div class="input-group">
+        <label>만료/갱신일</label>
+        <input type="text" id="bond-date" placeholder="예) 7/1" oninput="updateBOND()" />
+      </div>
+      <button class="reset-btn" onclick="resetBOND()">↺ 초기화</button>
+    </div>
+  </div>
+</div><!-- /tab-bond -->
+
+
+<!-- ════════════════════════════════════
+     탭 5 : DOA 승인 안내 KO/EN
+════════════════════════════════════ -->
+<div id="tab-doa" class="tab-content">
+
+  <div class="preview-panel">
+    <div class="panel-header">이메일 DRAFT — DOA 승인 안내 · 국문</div>
+    <div class="email-wrap">
+      <div class="email-field">
+        <div class="email-label">본문</div>
+        <div class="email-body" id="doa-body-ko"></div>
+      </div>
+      <button class="copy-btn" onclick="copyEmail(null,'doa-body-ko')">📋 국문 본문 복사</button>
+    </div>
+  </div>
+
+  <div class="preview-panel">
+    <div class="panel-header">이메일 DRAFT — DOA 승인 안내 · 영문</div>
+    <div class="email-wrap">
+      <div class="email-field">
+        <div class="email-label">본문</div>
+        <div class="email-body" id="doa-body-en"></div>
+      </div>
+      <button class="copy-btn" onclick="copyEmail(null,'doa-body-en')">📋 영문 본문 복사</button>
+    </div>
+  </div>
+</div><!-- /tab-doa -->
+
+
+<div id="toast">✓ 클립보드에 복사되었습니다!</div>
+
+
+<!-- ════════════════════════════════════  SCRIPT  ════════════════════════════════════ -->
+<script>
+
+  /* ── 언어 상태 ── */
+  const tabLang = { 'pre-alert': 'ko', 'customs': 'ko', 'invoice': 'ko', 'bond': 'ko' };
+
+  /* ── 공통 유틸 ── */
+  function val(id)     { return document.getElementById(id).value.trim(); }
+  function esc(s)      { return s.replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;'); }
+  function checked(id) { return document.getElementById(id).checked; }
+
+  /* 국문 날짜: 6/1 → Jun. 1, 2026 */
+  function fmtDate(raw) {
+    if (!raw) return '___';
+    const M = ['Jan.','Feb.','Mar.','Apr.','May','Jun.','Jul.','Aug.','Sep.','Oct.','Nov.','Dec.'];
+    const p = raw.split('/');
+    if (p.length === 2) {
+      const m = parseInt(p[0]), d = parseInt(p[1]);
+      if (m >= 1 && m <= 12 && d >= 1 && d <= 31) return `${M[m-1]} ${d}, 2026`;
+    }
+    return raw;
+  }
+
+  /* 영문 날짜: 6/1 → Jun 1, 2026 */
+  function fmtDateEn(raw) {
+    if (!raw) return '___';
+    const M = ['Jan','Feb','Mar','Apr','May','Jun','Jul','Aug','Sep','Oct','Nov','Dec'];
+    const p = raw.split('/');
+    if (p.length === 2) {
+      const m = parseInt(p[0]), d = parseInt(p[1]);
+      if (m >= 1 && m <= 12 && d >= 1 && d <= 31) return `${M[m-1]} ${d}, 2026`;
+    }
+    return raw;
+  }
+
+  /* 국문 월일: 7/1 → 7월 1일 */
+  function fmtDateKo(raw) {
+    if (!raw) return '___';
+    const p = raw.split('/');
+    if (p.length === 2) {
+      const m = parseInt(p[0]), d = parseInt(p[1]);
+      if (m >= 1 && m <= 12 && d >= 1 && d <= 31) return `${m}월 ${d}일`;
+    }
+    return raw;
+  }
+
+  function toggleCheck(lblId) {
+    const lbl = document.getElementById(lblId);
+    lbl.classList.toggle('checked', lbl.querySelector('input').checked);
+  }
+
+  function showToast() {
+    const t = document.getElementById('toast');
+    t.classList.add('show');
+    setTimeout(() => t.classList.remove('show'), 2500);
+  }
+
+  /* ── 탭 전환 ── */
+  function switchTab(tabId, tabBtn) {
+    document.querySelectorAll('.tab-content').forEach(el => el.classList.remove('active'));
+    document.querySelectorAll('.tab-btn').forEach(el => el.classList.remove('active'));
+    document.getElementById('tab-' + tabId).classList.add('active');
+    tabBtn.classList.add('active');
+    ({ 'pre-alert': updatePA, 'customs': updateCU, 'invoice': updateINV, 'bond': updateBOND, 'doa': updateDOA })[tabId]();
+  }
+
+  /* ── 언어 선택 ── */
+  function selectLang(tabId, lang, langBtn) {
+    tabLang[tabId] = lang;
+    // 뱃지 업데이트
+    document.getElementById('badge-' + tabId).textContent = lang === 'ko' ? 'KO' : 'EN';
+    // 드롭다운 버튼 active
+    langBtn.closest('.lang-dropdown').querySelectorAll('.lang-btn')
+           .forEach(b => b.classList.remove('active'));
+    langBtn.classList.add('active');
+    // 탭 전환 (이미 해당 탭이 활성이어도 재렌더)
+    const tabBtn = langBtn.closest('.tab-group').querySelector('.tab-btn');
+    switchTab(tabId, tabBtn);
+  }
+
+  /* ── 복사 (공통) ── */
+  function copyEmail(subjectId, bodyId) {
+    const subjectEl   = subjectId ? document.getElementById(subjectId) : null;
+    const bodyEl      = document.getElementById(bodyId);
+    const subjectText = subjectEl ? subjectEl.textContent : '';
+
+    const htmlContent =
+      `<div style="font-family:'Malgun Gothic',sans-serif;font-size:14px;line-height:1.85;color:#222;">` +
+      (subjectEl
+        ? `<p style="margin:0 0 10px 0;"><b>제목: ${esc(subjectText)}</b></p>
+           <hr style="border:none;border-top:1px solid #ccc;margin:8px 0 14px 0;">`
+        : '') +
+      bodyEl.innerHTML.replace(/\n/g, '<br>') +
+      `</div>`;
+
+    const plainText = (subjectEl ? `제목: ${subjectText}\n\n` : '') + bodyEl.innerText;
+
+    if (window.ClipboardItem) {
+      const item = new ClipboardItem({
+        'text/html':  new Blob([htmlContent], { type: 'text/html' }),
+        'text/plain': new Blob([plainText],   { type: 'text/plain' })
+      });
+      navigator.clipboard.write([item]).then(showToast).catch(() => fallbackCopy(bodyEl));
+    } else {
+      fallbackCopy(bodyEl);
+    }
+  }
+
+  function fallbackCopy(bodyEl) {
+    const div = document.createElement('div');
+    div.style.cssText = 'position:fixed;opacity:0;pointer-events:none';
+    div.innerHTML = bodyEl.innerHTML;
+    document.body.appendChild(div);
+    const sel = window.getSelection(), range = document.createRange();
+    range.selectNodeContents(div);
+    sel.removeAllRanges(); sel.addRange(range);
+    document.execCommand('copy');
+    sel.removeAllRanges();
+    document.body.removeChild(div);
+    showToast();
+  }
+
+
+  /* ════════════════════════════════════
+     TAB 1 : PRE-ALERT
+  ════════════════════════════════════ */
+  function updatePA() {
+    tabLang['pre-alert'] === 'ko' ? updatePA_KO() : updatePA_EN();
+  }
+
+  function updatePA_KO() {
+    document.getElementById('hdr-pre-alert').textContent = '이메일 DRAFT — PRE-ALERT · 국문';
+    const shipper = val('pa-shipper') || '(화주명)';
+    const bl      = val('pa-bl')      || '(BL#)';
+    document.getElementById('pa-subject').textContent =
+      `[COSHIP] PRE-ALERT - ${shipper} // HBL# ${bl}`;
+
+    const HR = `\n\n________________\n\n`;
+    const vd = fmtDate(val('pa-eta-van'));
+    const wd = fmtDate(val('pa-eta-wh'));
+
+    const summaryItems = [];
+    if (checked('chk-pa-carm'))   summaryItems.push(`&nbsp;&nbsp;&nbsp;&nbsp;<b>- CARM Importer 계정 등록</b>`);
+    if (checked('chk-pa-rpp'))    summaryItems.push(`&nbsp;&nbsp;&nbsp;&nbsp;<b>- RPP 프로그램 등록 및 Financial Security 설정</b>`);
+    if (checked('chk-pa-poa'))    summaryItems.push(`&nbsp;&nbsp;&nbsp;&nbsp;<b>- Customs Broker 통관 위임 POA 작성</b>`);
+    if (checked('chk-pa-co'))     summaryItems.push(`&nbsp;&nbsp;&nbsp;&nbsp;<b>- 원산지증명서 발급/제공 가능 여부 확인</b>`);
+    if (checked('chk-pa-hscode')) summaryItems.push(`&nbsp;&nbsp;&nbsp;&nbsp;<b>- HS Code 정보 확인</b>`);
+
+    const detailBlocks = [];
+    if (checked('chk-pa-carm')) detailBlocks.push(
+      HR +
+      `<b>✅ CARM Importer 계정 등록</b>\n\n` +
+      `수입자는 통관 전 CARM Client Portal(CCP)에 가입되어 있어야 합니다.\n` +
+      `캐나다 최초 수입의 경우 Import-export program(RM account) 등록도 함께 진행 부탁드립니다.\n` +
+      `&nbsp;&nbsp;&nbsp;&nbsp;- CARM Client Portal: https://ccp-pcc.cbsa-asfc.cloud-nuage.canada.ca/en/homepage\n` +
+      `&nbsp;&nbsp;&nbsp;&nbsp;- 참고자료 : <b>CARM First-time Setup 매뉴얼</b>`
+    );
+    if (checked('chk-pa-rpp')) detailBlocks.push(
+      HR +
+      `<b>✅ RPP 프로그램 등록 및 Financial Security 설정</b>\n\n` +
+      `CARM 계정 내에서 RPP 프로그램 등록 및 Financial Security 설정이 필요합니다.\n` +
+      `세부 절차는 첨부된 관련 안내 이메일을 확인해 주세요.\n` +
+      `&nbsp;&nbsp;&nbsp;&nbsp;- 참고자료 : <b>RPP 프로그램 등록 및 Financial Security 확보 관련 안내</b>`
+    );
+    if (checked('chk-pa-poa')) detailBlocks.push(
+      HR +
+      `<b>✅ Customs Broker 통관 위임 POA 작성</b>\n\n` +
+      `당사를 통한 최초 수입 시 1회에 한해 POA(Power of Attorney) 서류 작성이 필요합니다.\n` +
+      `첨부된 서류 작성 및 서명 후 회신 부탁드립니다.\n` +
+      `&nbsp;&nbsp;&nbsp;&nbsp;- 참고자료 : <b>POA_Agreement 양식 / POA_작성 가이드</b>\n\n` +
+      `이후 Customs Broker 측에서 CARM Invitation 발송 후 안내 드리니, 해당 초대를 승인해 주시면 됩니다.`
+    );
+    if (checked('chk-pa-co')) detailBlocks.push(
+      HR +
+      `<b>✅ 원산지증명서 발급/제공 가능 여부 확인</b>\n\n` +
+      `한국산 적용이 가능한 품목이 있는 경우, 관세 면제 또는 절감 혜택이 적용될 수 있습니다.\n` +
+      `CKFTA 원산지증명서 발급 또는 제공 가능 여부를 확인해 주시면 감사하겠습니다.\n` +
+      `(개인 여권을 이용해 수출 진행된 화물은 원산지 적용 대상에서 제외됩니다.)\n` +
+      `&nbsp;&nbsp;&nbsp;&nbsp;- 참고자료 : <b>Certificate of Origin_CKFTA 양식 (영문 / 국문)</b>`
+    );
+    if (checked('chk-pa-hscode')) detailBlocks.push(
+      HR +
+      `<b>✅ HS Code 정보 확인</b>\n\n` +
+      `각 품목별 HS Code 정보(최소 6자리)를 확인하시어 회신 부탁드립니다.\n` +
+      `정확한 HS Code 신고는 수입자의 의무이며, 캐나다 수입 통관 시 아래 사항에 사용됩니다.\n` +
+      `&nbsp;&nbsp;&nbsp;&nbsp;- 품목 분류를 통한 관세 및 세율 산정\n` +
+      `&nbsp;&nbsp;&nbsp;&nbsp;- 불필요한 통관 지연 및 추가 검사 비용 방지\n` +
+      `&nbsp;&nbsp;&nbsp;&nbsp;- 향후 사후 검증 또는 Audit 발생 시 대응 자료로 활용\n\n` +
+      `통관 후에도 관련 기록은 자체적으로 보관해 주시기 바랍니다.`
+    );
+
+    const extraPhrase = summaryItems.length > 0
+      ? `<b> / 수입 통관 전 확인 필요 사항</b>`
+      : '';
+
+    const extraBlock = summaryItems.length > 0
+      ? HR +
+        `<b>📌 수입자 확인 필요 사항</b>\n\n` +
+        `통관 및 출고 지연 방지를 위해 아래 사항을 확인해 주세요.\n` +
+        summaryItems.join('\n') +
+        detailBlocks.join('')
+      : '';
+
+    document.getElementById('pa-body').innerHTML =
+      `안녕하세요, 캐나다쉬핑입니다.\n\n` +
+      `금번 수입하시는 <b>화물의 운송 일정</b>` + extraPhrase + `을 아래와 같이 안내드립니다.` +
+      HR +
+      `<b>📦 화물 운송 일정</b>\n\n` +
+      `&nbsp;&nbsp;🚢 밴쿠버항 도착 예정일 : <b>${esc(vd)}</b>\n` +
+      `&nbsp;&nbsp;🏭 보세창고 입고 예상일 : <b>${esc(wd)}</b>\n\n` +
+      `항구 도착 후 컨테이너가 밴쿠버 내 지정 보세창고로 입고되기까지 통상 약 1 – 2주 소요됩니다.\n` +
+      `보세창고 입고 후 통관 절차가 완료되면 화물 출고 및 이동이 가능합니다.\n\n` +
+      `항만 정체, 세관 검사 또는 창고 상황에 따라 위 일정은 변동될 수 있습니다.` +
+      extraBlock +
+      HR +
+      `진행 상황은 지속적으로 모니터링하여 특이사항 발생 시 별도 안내드리겠습니다.\n\n` +
+      `관련하여 문의 사항이 있으시면 편히 말씀해 주세요. 감사합니다.`;
+  }
+
+  function updatePA_EN() {
+    document.getElementById('hdr-pre-alert').textContent = '이메일 DRAFT — PRE-ALERT · 영문';
+    const shipper = val('pa-shipper') || '(Shipper)';
+    const bl      = val('pa-bl')      || '(BL#)';
+    document.getElementById('pa-subject').textContent =
+      `[COSHIP] PRE-ALERT - ${shipper} // HBL# ${bl}`;
+
+    const HR = `\n\n________________\n\n`;
+    const vd = fmtDateEn(val('pa-eta-van'));
+    const wd = fmtDateEn(val('pa-eta-wh'));
+
+    const summaryItems = [];
+    if (checked('chk-pa-carm'))   summaryItems.push(`&nbsp;&nbsp;&nbsp;&nbsp;<b>- CARM Importer Account Registration</b>`);
+    if (checked('chk-pa-rpp'))    summaryItems.push(`&nbsp;&nbsp;&nbsp;&nbsp;<b>- RPP Program Registration &amp; Financial Security Setup</b>`);
+    if (checked('chk-pa-poa'))    summaryItems.push(`&nbsp;&nbsp;&nbsp;&nbsp;<b>- Customs Broker Authorization (POA)</b>`);
+    if (checked('chk-pa-co'))     summaryItems.push(`&nbsp;&nbsp;&nbsp;&nbsp;<b>- Certificate of Origin Availability</b>`);
+    if (checked('chk-pa-hscode')) summaryItems.push(`&nbsp;&nbsp;&nbsp;&nbsp;<b>- HS Code Information by Item</b>`);
+
+    const detailBlocks = [];
+    if (checked('chk-pa-carm')) detailBlocks.push(
+      HR +
+      `<b>✅ CARM Importer Account Registration</b>\n\n` +
+      `Prior to customs clearance, the importer must be registered in the CARM Client Portal (CCP).\n` +
+      `For first-time imports to Canada, please also register an Import-Export Program (RM account) at the same time.\n` +
+      `&nbsp;&nbsp;&nbsp;&nbsp;- CARM Client Portal: https://ccp-pcc.cbsa-asfc.cloud-nuage.canada.ca/en/homepage\n` +
+      `&nbsp;&nbsp;&nbsp;&nbsp;- Reference: <b>CARM_First-time Setup Manual</b>`
+    );
+    if (checked('chk-pa-rpp')) detailBlocks.push(
+      HR +
+      `<b>✅ RPP Program Registration &amp; Financial Security Setup</b>\n\n` +
+      `RPP program registration and Financial Security setup are required within your CARM account.\n` +
+      `Please refer to the attached guidance document for detailed instructions.\n` +
+      `&nbsp;&nbsp;&nbsp;&nbsp;- Reference: <b>User Guide - Post financial security for Release Prior to Payment (RPP) privileges</b>\n\n` +
+      `If you would like to purchase a Non-Cash Bond through our partner customs broker, please let us know.`
+    );
+    if (checked('chk-pa-poa')) detailBlocks.push(
+      HR +
+      `<b>✅ Customs Broker Authorization (POA)</b>\n\n` +
+      `A POA (Power of Attorney) is required once for your first import handled through our company.\n` +
+      `Please complete and sign the attached form and return it to us.\n` +
+      `&nbsp;&nbsp;&nbsp;&nbsp;- Reference: <b>POA_Agreement Form</b>\n\n` +
+      `Once the POA is received, the customs broker will send a CARM Invitation.\n` +
+      `We will guide you when you receive the invitation — please approve it.`
+    );
+    if (checked('chk-pa-co')) detailBlocks.push(
+      HR +
+      `<b>✅ Certificate of Origin Availability</b>\n\n` +
+      `If your shipment includes items of Korean origin, customs duty exemptions or reductions may be available.\n` +
+      `Please confirm whether a CKFTA Certificate of Origin can be issued or provided.\n` +
+      `(Shipments exported using a personal passport are excluded from origin eligibility.)\n` +
+      `&nbsp;&nbsp;&nbsp;&nbsp;- Reference: <b>Certificate of Origin_CKFTA Form</b>`
+    );
+    if (checked('chk-pa-hscode')) detailBlocks.push(
+      HR +
+      `<b>✅ HS Code Information by Item</b>\n\n` +
+      `Please review and provide the HS Code (minimum 6 digits) for each item in your upcoming shipment.\n` +
+      `Declaring the correct HS Code is a legal obligation for the importer, and is used in Canadian customs clearance for:\n` +
+      `&nbsp;&nbsp;&nbsp;&nbsp;- Determining duties and taxes through accurate commodity classification\n` +
+      `&nbsp;&nbsp;&nbsp;&nbsp;- Preventing unnecessary clearance delays and additional inspection costs\n` +
+      `&nbsp;&nbsp;&nbsp;&nbsp;- Providing supporting documentation for future post-clearance audits (CBSA Verification Audits)\n\n` +
+      `Please retain all relevant records even after customs clearance has been completed.`
+    );
+
+    const extraPhrase = summaryItems.length > 0
+      ? `<b> and required pre-clearance checklist</b>`
+      : '';
+
+    const extraBlock = summaryItems.length > 0
+      ? HR +
+        `<b>📌 Required Actions for Importer</b>\n\n` +
+        `To prevent delays in customs clearance and cargo release, please review and complete the following:\n` +
+        summaryItems.join('\n') +
+        detailBlocks.join('')
+      : '';
+
+    document.getElementById('pa-body').innerHTML =
+      `Hi, this is Canada Orient Shipping.\n\n` +
+      `Please find below <b>the shipping schedule</b>` + extraPhrase + ` for your upcoming import shipment.` +
+      HR +
+      `<b>📦 Shipment Schedule</b>\n\n` +
+      `&nbsp;&nbsp;🚢 Estimated Port Arrival (Vancouver, BC) : <b>${esc(vd)}</b>\n` +
+      `&nbsp;&nbsp;🏭 Estimated Bonded Warehouse Arrival (Vancouver, BC) : <b>${esc(wd)}</b>\n\n` +
+      `After arrival at the port, it typically takes 1 – 2 weeks for the container to be transferred to the designated bonded warehouse in Vancouver.\n` +
+      `Once the cargo has been received at the bonded warehouse and customs clearance is completed, the cargo can be released and moved.\n\n` +
+      `Please note that the above schedule is subject to change due to port congestion, customs examination, or warehouse receiving conditions.` +
+      extraBlock +
+      HR +
+      `We will continue to monitor the shipment progress and notify you separately should any issues arise.\n\n` +
+      `Should you have any questions, please feel free to reach out to us. Thank you.`;
+  }
+
+  function resetPA() {
+    ['pa-shipper','pa-bl','pa-eta-van','pa-eta-wh'].forEach(id => document.getElementById(id).value = '');
+    ['chk-pa-carm','chk-pa-rpp','chk-pa-poa','chk-pa-co','chk-pa-hscode'].forEach(id => document.getElementById(id).checked = false);
+    ['lbl-pa-carm','lbl-pa-rpp','lbl-pa-poa','lbl-pa-co','lbl-pa-hscode'].forEach(id => document.getElementById(id).classList.remove('checked'));
+    updatePA();
+  }
+
+
+  /* ════════════════════════════════════
+     TAB 2 : 통관 완료 안내
+  ════════════════════════════════════ */
+  function updateCU() {
+    tabLang['customs'] === 'ko' ? updateCU_KO() : updateCU_EN();
+  }
+
+  function toggleSubInputs() {
+    const on = checked('chk-cu-confirm');
+    document.getElementById('cu-address').disabled = !on;
+    document.getElementById('cu-phone').disabled   = !on;
+    if (!on) {
+      document.getElementById('cu-address').value = '';
+      document.getElementById('cu-phone').value   = '';
+    }
+  }
+
+  function updateCU_KO() {
+    document.getElementById('hdr-customs').textContent = '이메일 DRAFT — 통관 완료 안내 · 국문';
+    const parts = [];
+    if (checked('chk-cu-inquiry'))
+      parts.push(`최종 배송지 정보(주소, 연락처, 담당자명 등)를 회신 부탁드립니다.`);
+    if (checked('chk-cu-confirm')) {
+      const addr  = val('cu-address') || '___';
+      const phone = val('cu-phone')   || '___';
+      parts.push(`✅ 아래 최종 배송지 주소 및 연락 가능한 번호 정보를 확인 부탁드립니다.\n&nbsp;&nbsp;- 주소 : ${addr}\n&nbsp;&nbsp;- 연락처 : ${phone}`);
+    }
+    if (checked('chk-cu-delivery'))
+      parts.push(`화물에 대한 픽업 / 배송 희망 여부를 회신 부탁드립니다.`);
+
+    const infoBlock = parts.length > 0 ? `\n\n` + parts.join('\n\n') + `\n` : `\n`;
+
+    document.getElementById('cu-body').innerHTML =
+      `안녕하세요,\n\n` +
+      `본 화물의 입고 및 통관이 완료되었음을 안내드립니다.\n` +
+      `모든 비용이 최종 확정되는 대로 운송 대금 인보이스 및 통관 내역 서류를 송부드릴 예정입니다.\n` +
+      `대금 납부가 확인된 후 화물의 출고가 가능하오니 참고해 주시기 바랍니다.` +
+      infoBlock +
+      `\n감사합니다.`;
+  }
+
+  function updateCU_EN() {
+    document.getElementById('hdr-customs').textContent = '이메일 DRAFT — 통관 완료 안내 · 영문';
+    const parts = [];
+    if (checked('chk-cu-inquiry'))
+      parts.push(`Please provide the final delivery information (address, phone number, contact name, etc.).`);
+    if (checked('chk-cu-confirm')) {
+      const addr  = val('cu-address') || '___';
+      const phone = val('cu-phone')   || '___';
+      parts.push(`✅ Please confirm the final delivery address and contact number below:\n&nbsp;&nbsp;- Address : ${addr}\n&nbsp;&nbsp;- Contact : ${phone}`);
+    }
+    if (checked('chk-cu-delivery'))
+      parts.push(`Please let us know whether you would prefer pickup or delivery for the cargo.`);
+
+    const infoBlock = parts.length > 0 ? `\n\n` + parts.join('\n\n') + `\n` : `\n`;
+
+    document.getElementById('cu-body').innerHTML =
+      `Hi,\n\n` +
+      `We would like to inform you that the customs clearance for your cargo has been completed.\n` +
+      `Once all costs are finalized, we will send you the freight invoice and customs-related documents.\n` +
+      `Please note that cargo release is only possible after payment has been confirmed.` +
+      infoBlock +
+      `\nThank you.`;
+  }
+
+  function resetCU() {
+    ['chk-cu-inquiry','chk-cu-confirm','chk-cu-delivery'].forEach(id => document.getElementById(id).checked = false);
+    ['lbl-cu-inquiry','lbl-cu-confirm','lbl-cu-delivery'].forEach(id => document.getElementById(id).classList.remove('checked'));
+    document.getElementById('cu-address').value = '';
+    document.getElementById('cu-phone').value   = '';
+    toggleSubInputs();
+    updateCU();
+  }
+
+
+  /* ════════════════════════════════════
+     TAB 3 : 인보이스 안내
+  ════════════════════════════════════ */
+  function updateINV() {
+    tabLang['invoice'] === 'ko' ? updateINV_KO() : updateINV_EN();
+  }
+
+  function updateINV_KO() {
+    document.getElementById('hdr-invoice').textContent = '이메일 DRAFT — 운송 인보이스 안내 · 국문';
+    const topBlock = checked('chk-inv-customs')
+      ? `화물의 입고 및 통관이 완료되었습니다.` : ``;
+    const bottomParts = [];
+    if (checked('chk-inv-delivery'))
+      bottomParts.push(`대금 납부 내역이 확인되는 대로 최종 출고 및 배송 준비하도록 하겠습니다.`);
+    if (checked('chk-inv-pickup'))
+      bottomParts.push(`대금 납부를 진행하신 후 화물 픽업 일정을 알려주시면 그에 따라 화물 출고 준비하겠습니다.`);
+    const bottomBlock = bottomParts.length > 0 ? `\n` + bottomParts.join('\n') + `\n` : ``;
+
+    document.getElementById('inv-body').innerHTML =
+      `안녕하세요,\n\n` +
+      (topBlock ? topBlock + `\n` : ``) +
+      `본 건 운송 대금 인보이스 및 통관(세금 및 관세 등) 내역을 첨부와 같이 송부 드립니다.\n\n` +
+      `대금 납부는 첨부된 인보이스 하단의 Bank Info를 확인하시어 진행 부탁드립니다.\n` +
+      `e-Transfer로 납부하실 경우, 본 인보이스 번호 뒷자리 다섯 자리와 Security Answer를 아래 번호로 문자 회신해 주시면 감사하겠습니다.\n` +
+      `&nbsp;&nbsp;&nbsp;&nbsp;- 236-593-9000\n\n` +
+      `세금 및 관세 내역은 Customs Broker 측에서 최종 확인 후 세관에 제출할 예정입니다.\n` +
+      `고객께서는 CARM 계정에서 매월 25일 이후 발행되는 Statement를 확인하시어 해당 금액을 직접 납부해 주시면 됩니다.\n` +
+      bottomBlock +
+      `\n관련 문의가 있으시면 말씀 부탁드립니다. 감사합니다.`;
+  }
+
+  function updateINV_EN() {
+    document.getElementById('hdr-invoice').textContent = '이메일 DRAFT — 운송 인보이스 안내 · 영문';
+    const topBlock = checked('chk-inv-customs')
+      ? `The cargo has arrived at the bonded warehouse and customs clearance has been completed.` : ``;
+    const bottomParts = [];
+    if (checked('chk-inv-delivery'))
+      bottomParts.push(`We will arrange final cargo release and delivery as soon as your payment is confirmed.`);
+    if (checked('chk-inv-pickup'))
+      bottomParts.push(`Once payment is completed, please let us know your preferred pickup schedule and we will prepare the cargo accordingly.`);
+    const bottomBlock = bottomParts.length > 0 ? `\n` + bottomParts.join('\n') + `\n` : ``;
+
+    document.getElementById('inv-body').innerHTML =
+      `Hi,\n\n` +
+      (topBlock ? topBlock + `\n` : ``) +
+      `Please find attached the freight invoice and customs breakdown (duties and taxes) for this shipment.\n\n` +
+      `Please refer to the BANK INFO at the bottom of the invoice for payment details.\n` +
+      `If you are making payment via e-Transfer, we would appreciate it if you could text the number below with the last five digits of the invoice number and the security answer.\n` +
+      `&nbsp;&nbsp;&nbsp;&nbsp;- 236-593-9000\n\n` +
+      `The duties and taxes will be reviewed by the Customs Broker and submitted to CBSA.\n` +
+      `Please log in to your CARM account and pay the applicable amount directly, based on the Statement issued after the 25th of each month.\n` +
+      bottomBlock +
+      `\nShould you have any questions, please do not hesitate to contact us. Thank you.`;
+  }
+
+  function resetINV() {
+    ['chk-inv-customs','chk-inv-delivery','chk-inv-pickup'].forEach(id => document.getElementById(id).checked = false);
+    ['lbl-inv-customs','lbl-inv-delivery','lbl-inv-pickup'].forEach(id => document.getElementById(id).classList.remove('checked'));
+    updateINV();
+  }
+
+
+  /* ════════════════════════════════════
+     TAB 4 : 본드 갱신 인보이스 안내
+  ════════════════════════════════════ */
+  function updateBOND() {
+    tabLang['bond'] === 'ko' ? updateBOND_KO() : updateBOND_EN();
+  }
+
+  function updateBOND_KO() {
+    document.getElementById('hdr-bond').textContent = '이메일 DRAFT — 본드 갱신 인보이스 안내 · 국문';
+    const importer = val('bond-importer') || '(수입자명)';
+    document.getElementById('bond-subject').textContent =
+      `[COSHIP] Non-cash Bond 갱신 및 인보이스 관련 안내 // ${importer}`;
+    const bd = fmtDateKo(val('bond-date'));
+    document.getElementById('bond-body').innerHTML =
+      `안녕하세요, 캐나다쉬핑에서 안내드립니다.\n\n` +
+      `보유하고 계신 Non-cash Bond의 만료일이 임박함에 따라,\n` +
+      `요청 주신 본드 갱신에 대한 인보이스를 첨부와 같이 송부드립니다.\n\n` +
+      `대금 납부는 첨부된 인보이스 하단의 Bank Info를 확인하시어 진행 부탁드립니다.\n` +
+      `e-Transfer로 납부하실 경우, 지정하신 Security Answer를 회신해 주시면 감사하겠습니다.\n\n` +
+      `본드는 <b>${esc(bd)}</b> 만료 후 갱신될 예정입니다(유효 기간 1년). 참고 부탁드립니다.\n\n` +
+      `감사합니다.`;
+  }
+
+  function updateBOND_EN() {
+    document.getElementById('hdr-bond').textContent = '이메일 DRAFT — 본드 갱신 인보이스 안내 · 영문';
+    const importer = val('bond-importer') || '(Importer)';
+    document.getElementById('bond-subject').textContent =
+      `[COSHIP] Non-cash Bond Renewal – Invoice // ${importer}`;
+    const bd = fmtDateEn(val('bond-date'));
+    document.getElementById('bond-body').innerHTML =
+      `Hi, this is Canada Orient Shipping.\n\n` +
+      `As the expiry date of your Non-cash Bond is approaching,\n` +
+      `please find attached the invoice for the bond renewal you requested.\n\n` +
+      `Please refer to the BANK INFO at the bottom of the invoice for payment details.\n` +
+      `If you are making payment via e-Transfer, please provide the Security Answer you have designated.\n\n` +
+      `Please note that the bond will be renewed following the expiry on <b>${esc(bd)}</b> (valid for 1 year).\n\n` +
+      `Thank you.`;
+  }
+
+  function resetBOND() {
+    ['bond-importer','bond-date'].forEach(id => document.getElementById(id).value = '');
+    updateBOND();
+  }
+
+
+  /* ════════════════════════════════════
+     TAB 5 : DOA 승인 안내 KO/EN
+  ════════════════════════════════════ */
+  function updateDOA() {
+    const SEP = `________________`;
+
+    document.getElementById('doa-body-ko').innerHTML =
+      `안녕하세요,\n\n` +
+      `<b>통관 업무 위임</b>을 위해 Customs Broker 측에서 <b>CARM Invitation</b>을 보내드렸습니다.\n` +
+      `CARM Portal을 통해 해당 Invitation을 확인하시어 승인 진행 부탁드립니다.\n\n` +
+      `동 B/N에 대해 최초 1회 진행되는 절차이오니, 아래 안내에 따라 승인해 주시면 감사하겠습니다.\n\n` +
+      SEP + `\n\n` +
+      `✅ <b>CARM Invitation 승인 방법</b>\n\n` +
+      `CARM Portal 접속 후 아래 경로로 이동해 주세요.\n\n` +
+      `&nbsp;&nbsp;- 좌측 상단 Menu → Setup my portal → Manage my business relationship → Request Approval\n\n` +
+      `해당 메뉴에서 담당자 "2378395 ONTARIO INC. (Hyomin Lim)" 로부터 발송된 Request를 확인하신 후 Approval 해주시면 됩니다.\n\n` +
+      SEP + `\n\n` +
+      `📌 <b>Select access to programs 선택 관련 참고</b>\n\n` +
+      `Business Number 아래 RM Number를 여러 개 보유하신 경우, 아래 기준에 따라 선택해 주세요.\n\n` +
+      `<b>All Programs – Business Management</b>\n` +
+      `&nbsp;&nbsp;→ 해당 Business에서 진행하는 모든 통관 건에 대해 위임\n` +
+      `<b>Specific Programs – Program Management</b>\n` +
+      `&nbsp;&nbsp;→ 선택한 RM Number를 이용해 진행하는 통관 건에 대해서만 위임\n\n` +
+      `보유하신 RM Number가 1개인 경우에는 두 옵션 중 어떤 항목을 선택하셔도 무방합니다.\n\n` +
+      SEP + `\n\n` +
+      `승인 완료 후 회신해 주시면 통관 진행 상황을 이어서 확인하겠습니다. 관련 문의 사항이 있으시면 편히 말씀해 주세요.\n\n` +
+      `감사합니다.`;
+
+    document.getElementById('doa-body-en').innerHTML =
+      `Hi,\n\n` +
+      `In connection with your <b>customs broker authorization</b>, the Customs Broker has sent you a <b>CARM Invitation</b>.\n` +
+      `Please log in to the CARM Portal and approve the Invitation at your earliest convenience.\n\n` +
+      `This is a one-time process per Business Number (BN). Please follow the steps below to complete the approval.\n\n` +
+      SEP + `\n\n` +
+      `✅ <b>How to Approve the CARM Invitation</b>\n\n` +
+      `After logging in to the CARM Portal, navigate to the following:\n\n` +
+      `&nbsp;&nbsp;- Menu → Setup my portal → Manage my business relationship → Request Approval\n\n` +
+      `Find the request sent from "2378395 ONTARIO INC. (Hyomin Lim)" and click Approval to complete.\n\n` +
+      SEP + `\n\n` +
+      `📌 <b>Note on Selecting Access to Programs</b>\n\n` +
+      `If you have multiple RM Numbers under your Business Number, please select based on the following:\n\n` +
+      `<b>All Programs – Business Management</b>\n` +
+      `&nbsp;&nbsp;→ Delegates authority for all customs entries filed under the Business\n` +
+      `<b>Specific Programs – Program Management</b>\n` +
+      `&nbsp;&nbsp;→ Delegates authority only for customs entries filed under the selected RM Number\n\n` +
+      `If you have only one RM Number, either option may be selected.\n\n` +
+      SEP + `\n\n` +
+      `Please reply once the approval is completed, and we will proceed with the customs clearance.\n` +
+      `Should you have any questions, please feel free to reach out.\n\n` +
+      `Thank you.`;
+  }
+
+
+  /* ── 초기 렌더링 ── */
+  updatePA();
+  updateCU();
+  updateINV();
+  updateBOND();
+  updateDOA();
+
+  /* ── 탭 언어 드롭다운 (fixed 좌표 계산) ── */
+  document.querySelectorAll('.tab-group').forEach(group => {
+    const dropdown = group.querySelector('.lang-dropdown');
+    if (!dropdown) return;
+    let hideTimer = null;
+
+    function showDropdown() {
+      clearTimeout(hideTimer);
+      const rect = group.getBoundingClientRect();
+      dropdown.style.top       = rect.bottom + 'px';
+      dropdown.style.left      = rect.left   + 'px';
+      dropdown.style.minWidth  = rect.width  + 'px';
+      dropdown.style.display   = 'flex';
+    }
+    function hideDropdown() {
+      hideTimer = setTimeout(() => { dropdown.style.display = 'none'; }, 120);
+    }
+
+    group.addEventListener('mouseenter', showDropdown);
+    group.addEventListener('mouseleave', hideDropdown);
+    dropdown.addEventListener('mouseenter', () => clearTimeout(hideTimer));
+    dropdown.addEventListener('mouseleave', hideDropdown);
+  });
+
+  /* ── 탭 바 드래그 스크롤 ── */
+  (function () {
+    const bar = document.querySelector('.tab-bar');
+    let isDown = false, startX = 0, scrollLeft = 0, moved = false;
+
+    bar.addEventListener('mousedown', e => {
+      isDown    = true;
+      moved     = false;
+      startX    = e.pageX - bar.getBoundingClientRect().left;
+      scrollLeft = bar.scrollLeft;
+      bar.classList.add('is-dragging');
+    });
+    document.addEventListener('mouseup', () => {
+      isDown = false;
+      bar.classList.remove('is-dragging');
+    });
+    bar.addEventListener('mousemove', e => {
+      if (!isDown) return;
+      const x    = e.pageX - bar.getBoundingClientRect().left;
+      const walk = x - startX;
+      if (Math.abs(walk) > 5) moved = true;
+      bar.scrollLeft = scrollLeft - walk;
+    });
+    /* 드래그 중 클릭 이벤트 차단 (탭 오작동 방지) */
+    bar.addEventListener('click', e => {
+      if (moved) { e.stopPropagation(); moved = false; }
+    }, true);
+  })();
+
+</script>
+</body>
+</html>
