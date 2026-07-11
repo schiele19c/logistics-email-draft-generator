@@ -21,24 +21,24 @@ Email Draft Generator는 포워딩 업무에서 반복적으로 작성되는 고
 | Metric | Value |
 |--------|------:|
 | 이메일 템플릿 | **5종** |
-| 지원 언어 | **2개** |
-| 주요 자동화 연계 | **2개 예정** |
-| Backend | **없음** |
+| 지원 언어 | **한국어/영어** |
 | 실행 환경 | **Browser Only** |
+| Backend | **없음(Client-side)** |
 | Outlook 호환 | **HTML Clipboard** |
+| 향후 연계 | **Progress Sheets / Outlook Draft Automation** |
 
 ---
 
 # 프로젝트 하이라이트
 
-- 반복적인 이메일 작성 시간 단축
-- 고객 안내 문구 표준화
-- 실시간 이메일 Preview
-- Outlook 서식(HTML) 유지 복사
-- 국문 / 영문 이메일 지원
-- 조건부 템플릿 생성
-- 브라우저만으로 실행 가능한 경량 구조
-- 향후 자동화 프로젝트와 연계 가능한 구조
+- ✅ 반복적인 이메일 작성 시간 단축
+- ✅ 고객 안내 문구 표준화
+- ✅ 실시간 이메일 Preview
+- ✅ Outlook 서식(HTML) 유지 복사
+- ✅ 국문 / 영문 이메일 지원
+- ✅ 조건부 템플릿 생성
+- ✅ 브라우저만으로 실행 가능한 경량 구조
+- ✅ 향후 자동화 프로젝트와 연계 가능한 구조
 
 ---
 
@@ -391,6 +391,10 @@ Email-Draft-Generator
 │   └── future-roadmap.md
 │
 ├── screenshots/
+│   ├── 01_main.png
+│   ├── 02_email-draft-preview.png
+│   ├── 03_template-options.png
+│   └── 04_outlook.png
 │
 ├── email-draft-generator.html
 │
@@ -415,7 +419,7 @@ git clone https://github.com/schiele19c/logistics-email-draft-generator.git
 cd logistics-email-draft-generator
 ```
 
-### 3. `index.html`을 브라우저에서 실행합니다.
+### 3. `email-draft-generator.html`을 브라우저에서 실행합니다.
 
 별도의 패키지 설치나 서버 실행 과정은 필요하지 않습니다.
 
