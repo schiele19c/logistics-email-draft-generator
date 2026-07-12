@@ -206,7 +206,7 @@ Progress Sheets에는 화물별 운송 진행 상황, 통관 상태, ETA, 창고
 
 이를 위해 HTML, CSS, Vanilla JavaScript를 기반으로 단일 HTML 파일 형태로 구현했으며, Outlook에서 이메일 서식을 유지한 채 사용할 수 있도록 Clipboard API를 활용했습니다.
 
-기술 스택 선정 배경, 시스템 계층 구조, 데이터 흐름 및 컴포넌트 설계에 대한 자세한 내용은 [docs/04_system-architecture.md](docs/04_system-architecture.md)에서 설명합니다.
+기술 스택 선정 배경, 시스템 계층 구조, 데이터 흐름 및 컴포넌트 설계에 대한 자세한 내용은 [04_system-architecture.md](04_system-architecture.md)에서 설명합니다.
 
 ---
 
