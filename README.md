@@ -270,7 +270,7 @@ Microsoft Outlook
 
 이를 통해 설치 과정 없이 누구나 동일한 환경에서 사용할 수 있으며, 빠른 실행과 간단한 배포가 가능합니다.
 
-보다 자세한 시스템 구조는 **docs/system-architecture.md**에서 확인할 수 있습니다.
+보다 자세한 시스템 구조는 [docs/04_system-architecture.md](docs/04_system-architecture.md)에서 확인할 수 있습니다.
 
 ---
 
