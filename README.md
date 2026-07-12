@@ -494,4 +494,4 @@ Outlook Draft
 - 이메일 템플릿 추가
 - 사용자 설정 기능
 
-자세한 내용은 **docs/future-roadmap.md**에서 확인할 수 있습니다.
+자세한 내용은 [docs/06_future-roadmap.md](docs/06_future-roadmap.md)에서 확인할 수 있습니다.
