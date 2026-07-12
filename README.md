@@ -421,6 +421,10 @@ cd logistics-email-draft-generator
 
 ### 3. `email-draft-generator.html`을 브라우저에서 실행합니다.
 
+```bash
+start email-draft-generator.html
+```
+
 별도의 패키지 설치나 서버 실행 과정은 필요하지 않습니다.
 
 ---
