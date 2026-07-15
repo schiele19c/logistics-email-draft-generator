@@ -2,6 +2,10 @@
 
 > 반복적으로 작성되는 포워딩 및 통관 안내 이메일을 표준화하고, Outlook에서 바로 사용할 수 있는 이메일 초안을 빠르게 생성하기 위해 개발한 브라우저 기반 웹 애플리케이션입니다.
 
+> **🔗 [Live Demo — 브라우저에서 바로 사용해보기](https://schiele19c.github.io/logistics-email-draft-generator/)**
+>
+> 설치 없이 클릭 한 번으로 실제 동작을 확인할 수 있습니다.
+
 ---
 
 # 프로젝트 소개
@@ -396,7 +400,7 @@ Email-Draft-Generator
 │   ├── 03_template-options.png
 │   └── 04_outlook.png
 │
-├── email-draft-generator.html
+├── index.html
 │
 └── README.md
 ```
@@ -405,24 +409,16 @@ Email-Draft-Generator
 
 # 실행 방법
 
-본 프로젝트는 별도의 설치 과정 없이 실행할 수 있습니다.
+### 1. 온라인에서 바로 실행 (권장)
 
-### 1. 저장소를 Clone합니다.
+[Live Demo](https://schiele19c.github.io/logistics-email-draft-generator/)에 접속하면 설치 없이 사용할 수 있습니다.
 
-```bash
+### 2. 로컬에서 실행
+
+```
 git clone https://github.com/schiele19c/logistics-email-draft-generator.git
-```
-
-### 2. 프로젝트 폴더를 엽니다.
-
-```bash
 cd logistics-email-draft-generator
-```
-
-### 3. `email-draft-generator.html`을 브라우저에서 실행합니다.
-
-```bash
-start email-draft-generator.html
+start index.html
 ```
 
 별도의 패키지 설치나 서버 실행 과정은 필요하지 않습니다.
